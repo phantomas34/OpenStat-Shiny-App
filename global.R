@@ -15,6 +15,7 @@ library(psych)
 library(scales)
 library(readxl)
 library(shinyWidgets)
+library(bsicons)
 
 # --- bslib Theme Definitions ---
 light_theme <- bs_theme(version = 5)
@@ -33,4 +34,5 @@ exam_scores <- data.frame(
 
 # Source the helper file for the inferential UI. This makes the `inferential_tab_ui`
 # object available to the main ui.R file.
+source("R/utils.R")
 source("R/ui_inferential.R")

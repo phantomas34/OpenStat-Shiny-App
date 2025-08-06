@@ -1,9 +1,15 @@
 # ui.R
 
+# --- bslib Theme Definitions ---
+light_theme <- bs_theme(version = 5)
+dark_theme <- bs_theme(version = 5, bootswatch = "darkly")
 
-
+# The only change is adding `lib = bootstrap()` to the page_sidebar
 ui <- page_sidebar(
   title = "OpenStat Web App",
+  
+  # --- ADD THIS LINE TO LOAD BOOTSTRAP ICONS ---
+  # --- END OF CHANGE ---
   
   sidebar = sidebar(
     materialSwitch(inputId = "dark_mode_switch", label = "Dark Mode", status = "primary"),
