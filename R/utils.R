@@ -11,7 +11,6 @@ with_info_popover <- function(ui_element, title, content) {
       
       # The popover icon
       popover(
-        # THIS IS THE LINE THAT WAS WRONG BEFORE
         # We are now using bs_icon() instead of icon()
         trigger = bs_icon("question-circle-fill", class = "text-primary"), 
         
