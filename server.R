@@ -1036,6 +1036,31 @@ server <- function(input, output, session) {
       cat(paste0(input$binom_type, " = ", round(prob_val, 4), "\n"))
     })
   })
+  # --- Binomial "Solve for x" Logic ---
+  observeEvent(input$solve_binom_k, {
+    req(input$binom_size, input$binom_prob, input$binom_p_for_k)
+    
+    # Input validation
+    if (input$binom_size < 1 || input$binom_prob < 0 || input$binom_prob > 1 || input$binom_p_for_k < 0 || input$binom_p_for_k > 1) {
+      showNotification("Invalid Binomial parameters.", type = "error")
+      output$solve_binom_k_output <- renderPrint({ cat("Invalid input: Check n, p, and probability values.\n") })
+      return()
+    }
+    
+    # The input ID is still "binom_k" but we will refer to its value as 'x_val'
+    x_val <- qbinom(p = input$binom_p_for_k, size = input$binom_size, prob = input$binom_prob)
+    
+    # Calculate the actual probability at that x to show the user for context
+    actual_prob <- pbinom(x_val, size = input$binom_size, prob = input$binom_prob)
+    
+    # Render the result, using 'x' in the output text
+    output$solve_binom_k_output <- renderPrint({
+      cat(paste0("To achieve a cumulative probability of at least ", input$binom_p_for_k, ",\n",
+                 "you need ", x_val, " successes (x).\n\n",
+                 "The actual probability at this point is P(X <= ", x_val, ") = ", round(actual_prob, 4)))
+    })
+  })
+  
   
   output$binom_pmf_plot <- renderPlot({
     req(input$binom_size, input$binom_prob)
