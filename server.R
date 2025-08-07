@@ -188,6 +188,18 @@ server <- function(input, output, session) {
       }
       modal_data_r(df)
     }
+    
+    # Get the data from the modal editor
+    df_to_save <- modal_data_r()
+    
+    # Use dplyr's `mutate` with `across` to attempt conversion
+    # The `type.convert` function is a base R function that's perfect for this
+    df_converted <- df_to_save %>%
+      mutate(across(everything(), ~ type.convert(.x, as.is = TRUE)))
+    
+    # Save the *converted* data to the main reactive value
+    data_r(df_converted) 
+    
     data_r(modal_data_r())
     removeModal()
     showNotification("Data saved successfully!", type = "message")
