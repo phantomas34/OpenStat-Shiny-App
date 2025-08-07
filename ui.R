@@ -144,6 +144,7 @@ ui <- page_sidebar(
                    h2("Probability Distributions and Calculations"),
                    navset_card_tab(
                      nav_panel("Basic Event Probability",
+                               # ... (this part is unchanged) ...
                                layout_columns(
                                  col_widths = c(6, 6),
                                  card(
@@ -167,6 +168,7 @@ ui <- page_sidebar(
                                )
                      ),
                      nav_panel("Normal Distribution",
+                               # ... (this part is unchanged) ...
                                layout_sidebar(
                                  sidebar = sidebar(
                                    numericInput("normal_mean", "Mean (\u03bc):", value = 0),
@@ -189,12 +191,23 @@ ui <- page_sidebar(
                                    card_header("Binomial Distribution Parameters"),
                                    numericInput("binom_size", "Number of Trials (n)", value = 10, min = 1, step = 1),
                                    numericInput("binom_prob", "Probability of Success (p)", value = 0.5, min = 0, max = 1, step = 0.01),
+                                   
                                    hr(),
-                                   h4("Calculate P(X = k) or P(X <= k)"),
-                                   numericInput("binom_k", "Number of Successes (k)", value = 5, min = 0, step = 1),
-                                   selectInput("binom_type", "Probability Type", choices = c("P(X = k)", "P(X <= k)", "P(X >= k)")),
-                                   actionButton("calc_binom_prob", "Calculate Binomial Probability"),
-                                   verbatimTextOutput("binom_prob_output")
+                                   
+                                   h4("Calculate P(X) given x"), # Changed to 'x'
+                                   numericInput("binom_k", "Number of Successes (x)", value = 5, min = 0, step = 1), # Changed label to 'x'
+                                   selectInput("binom_type", "Probability Type", choices = c("P(X = x)", "P(X <= x)", "P(X >= x)")), # Changed to 'x'
+                                   actionButton("calc_binom_prob", "Calculate Probability"),
+                                   verbatimTextOutput("binom_prob_output"),
+                                   
+                                   hr(),
+                                   
+                                   # --- THIS IS THE MISSING SECTION, NOW WITH 'x' ---
+                                   h4("Find x for a given Cumulative Probability P(X \u2264 x)"),
+                                   numericInput("binom_p_for_k", "Cumulative Probability (e.g., 0.95):", value = 0.95, min = 0, max = 1, step = 0.01),
+                                   actionButton("solve_binom_k", "Solve for x"), # Changed button label
+                                   verbatimTextOutput("solve_binom_k_output")
+                                   # --- END OF SECTION ---
                                  ),
                                  card(
                                    card_header("Binomial Distribution PMF Plot"),
@@ -203,6 +216,7 @@ ui <- page_sidebar(
                                )
                      ),
                      nav_panel("Poisson Distribution",
+                               # ... (this part is unchanged) ...
                                layout_columns(
                                  col_widths = c(4, 8),
                                  card(

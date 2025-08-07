@@ -178,31 +178,43 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$modal_save_data, {
+    # Initialize df_to_save
+    df_to_save <- NULL
+    
+    # --- START OF NEW, MORE ROBUST LOGIC ---
     if (isTRUE(input$mobile_edit_mode)) {
-      df <- modal_data_r()
-      for (row_idx in 1:nrow(df)) {
-        for (col_idx in 1:ncol(df)) {
+      # For mobile, reconstruct the data frame from individual inputs
+      df_temp <- modal_data_r()
+      for (row_idx in 1:nrow(df_temp)) {
+        for (col_idx in 1:ncol(df_temp)) {
           value <- input[[paste0("cell_", row_idx, "_", col_idx)]]
-          if (!is.null(value)) df[row_idx, col_idx] <- value
+          if (!is.null(value)) df_temp[row_idx, col_idx] <- value
         }
       }
-      modal_data_r(df)
+      df_to_save <- df_temp
+    } else {
+      # For desktop, get the data directly from the rhandsontable output
+      if (!is.null(input$modal_spreadsheet)) {
+        df_to_save <- hot_to_r(input$modal_spreadsheet)
+      }
     }
     
-    # Get the data from the modal editor
-    df_to_save <- modal_data_r()
-    
-    # Use dplyr's `mutate` with `across` to attempt conversion
-    # The `type.convert` function is a base R function that's perfect for this
-    df_converted <- df_to_save %>%
-      mutate(across(everything(), ~ type.convert(.x, as.is = TRUE)))
-    
-    # Save the *converted* data to the main reactive value
-    data_r(df_converted) 
-    
-    data_r(modal_data_r())
-    removeModal()
-    showNotification("Data saved successfully!", type = "message")
+    # Now, attempt to convert data types, but only if we have a data frame
+    if (!is.null(df_to_save)) {
+      # Use `type.convert` across all columns to intelligently guess data types
+      df_converted <- df_to_save %>%
+        mutate(across(everything(), ~ type.convert(.x, as.is = TRUE)))
+      
+      # Save the *converted* data to the main reactive value
+      data_r(df_converted)
+      
+      removeModal()
+      showNotification("Data saved successfully!", type = "message")
+    } else {
+      removeModal()
+      showNotification("No data to save.", type = "warning")
+    }
+    # --- END OF NEW LOGIC ---
   })
   
   output$data_preview_table <- renderDT({
@@ -1024,6 +1036,31 @@ server <- function(input, output, session) {
       cat(paste0(input$binom_type, " = ", round(prob_val, 4), "\n"))
     })
   })
+  # --- Binomial "Solve for x" Logic ---
+  observeEvent(input$solve_binom_k, {
+    req(input$binom_size, input$binom_prob, input$binom_p_for_k)
+    
+    # Input validation
+    if (input$binom_size < 1 || input$binom_prob < 0 || input$binom_prob > 1 || input$binom_p_for_k < 0 || input$binom_p_for_k > 1) {
+      showNotification("Invalid Binomial parameters.", type = "error")
+      output$solve_binom_k_output <- renderPrint({ cat("Invalid input: Check n, p, and probability values.\n") })
+      return()
+    }
+    
+    # The input ID is still "binom_k" but we will refer to its value as 'x_val'
+    x_val <- qbinom(p = input$binom_p_for_k, size = input$binom_size, prob = input$binom_prob)
+    
+    # Calculate the actual probability at that x to show the user for context
+    actual_prob <- pbinom(x_val, size = input$binom_size, prob = input$binom_prob)
+    
+    # Render the result, using 'x' in the output text
+    output$solve_binom_k_output <- renderPrint({
+      cat(paste0("To achieve a cumulative probability of at least ", input$binom_p_for_k, ",\n",
+                 "you need ", x_val, " successes (x).\n\n",
+                 "The actual probability at this point is P(X <= ", x_val, ") = ", round(actual_prob, 4)))
+    })
+  })
+  
   
   output$binom_pmf_plot <- renderPlot({
     req(input$binom_size, input$binom_prob)
