@@ -5,6 +5,6 @@ account: openstats
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 15172241
-bundleId: 10738098
+bundleId: 10742590
 url: https://openstats.shinyapps.io/openstat/
 version: 1
