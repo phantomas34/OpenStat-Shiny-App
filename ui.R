@@ -168,17 +168,24 @@ ui <- page_sidebar(
                                )
                      ),
                      nav_panel("Normal Distribution",
-                               # ... (this part is unchanged) ...
                                layout_sidebar(
                                  sidebar = sidebar(
                                    numericInput("normal_mean", "Mean (\u03bc):", value = 0),
-                                   numericInput("normal_sd", "Standard Deviation (\u03c3):", value = 1),
+                                   numericInput("normal_sd", "Standard Deviation (\u03c3):", value = 1, min = 0.01),
+                                   
+                                   # --- ADD THE NEW OPTION HERE ---
                                    selectInput(
-                                     "normal_prob_type", "Select Probability Type:",
-                                     choices = c("P(X < x)" = "less", "P(X > x)" = "greater", "P(a < X < b)" = "between")
+                                     "normal_prob_type", "Select Calculation Type:",
+                                     choices = c(
+                                       "Find Probability from x (P(X < x))" = "less",
+                                       "Find Probability from x (P(X > x))" = "greater",
+                                       "Find Probability from range (P(a < X < b))" = "between",
+                                       "Find x from Probability (Solve for x)" = "inverse" # <-- NEW
+                                     )
                                    ),
-                                   uiOutput("normal_inputs"),
-                                   actionButton("calc_normal", "Calculate Probability")
+                                   
+                                   uiOutput("normal_inputs"), # This placeholder is now essential
+                                   actionButton("calc_normal", "Calculate")
                                  ),
                                  textOutput("normal_result"),
                                  plotOutput("normal_plot")

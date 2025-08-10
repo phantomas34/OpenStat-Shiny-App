@@ -955,66 +955,105 @@ server <- function(input, output, session) {
   })
   
   output$normal_inputs <- renderUI({
-    if (input$normal_prob_type %in% c("less", "greater")) {
-      numericInput("normal_x", "X Value:", value = 0)
-    }
-    else if (input$normal_prob_type == "between") {
+    req(input$normal_prob_type)
+    
+    prob_type <- input$normal_prob_type
+    
+    if (prob_type == "inverse") {
+      # If user wants to solve for x, show a probability input
+      numericInput("normal_p", "Cumulative Probability P(X < x):", value = 0.95, min = 0, max = 1, step = 0.01)
+    } else if (prob_type %in% c("less", "greater")) {
+      # If user wants to find probability, show an x-value input
+      numericInput("normal_x", "X Value:", value = 1.96)
+    } else if (prob_type == "between") {
+      # For a range, show two x-value inputs
       tagList(
-        numericInput("normal_a", "Lower Bound (a):", value = 0),
-        numericInput("normal_b", "Upper Bound (b):", value = 0)
+        numericInput("normal_a", "Lower Bound (a):", value = -1.96),
+        numericInput("normal_b", "Upper Bound (b):", value = 1.96)
       )
     }
   })
   
+  # This observeEvent now handles all four calculation types
   observeEvent(input$calc_normal, {
-    req(input$normal_mean, input$normal_sd)
+    req(input$normal_mean, input$normal_sd, input$normal_prob_type)
+    
     if (input$normal_sd <= 0) {
       showNotification("Standard deviation must be positive.", type = "error")
       output$normal_result <- renderText("Invalid input: Standard deviation must be positive.")
       return()
     }
+    
     prob_type <- input$normal_prob_type
-    result <- NA
-    if (prob_type == "less") {
-      req(input$normal_x)
-      result <- pnorm(input$normal_x, mean = input$normal_mean, sd = input$normal_sd)
-      output$normal_result <- renderText(paste0("P(X < ", input$normal_x, ") = ", round(result, 4)))
-    }
-    else if (prob_type == "greater") {
-      req(input$normal_x)
-      result <- 1 - pnorm(input$normal_x, mean = input$normal_mean, sd = input$normal_sd)
-      output$normal_result <- renderText(paste0("P(X > ", input$normal_x, ") = ", round(result, 4)))
-    }
-    else if (prob_type == "between") {
-      req(input$normal_a, input$normal_b)
-      result <- pnorm(input$normal_b, mean = input$normal_mean, sd = input$normal_sd) -
-        pnorm(input$normal_a, mean = input$normal_mean, sd = input$normal_sd)
-      output$normal_result <- renderText(paste0("P(", input$normal_a, " < X < ", input$normal_b, ") = ", round(result, 4)))
-    }
+    
+    # Perform calculation based on the selected type
+    result_text <- switch(
+      prob_type,
+      "less" = {
+        req(input$normal_x)
+        prob <- pnorm(input$normal_x, mean = input$normal_mean, sd = input$normal_sd)
+        paste0("P(X < ", input$normal_x, ") = ", round(prob, 4))
+      },
+      "greater" = {
+        req(input$normal_x)
+        prob <- 1 - pnorm(input$normal_x, mean = input$normal_mean, sd = input$normal_sd)
+        paste0("P(X > ", input$normal_x, ") = ", round(prob, 4))
+      },
+      "between" = {
+        req(input$normal_a, input$normal_b)
+        prob <- pnorm(input$normal_b, mean = input$normal_mean, sd = input$normal_sd) -
+          pnorm(input$normal_a, mean = input$normal_mean, sd = input$normal_sd)
+        paste0("P(", input$normal_a, " < X < ", input$normal_b, ") = ", round(prob, 4))
+      },
+      "inverse" = {
+        req(input$normal_p)
+        # The qnorm() function is the inverse of pnorm() - it solves for x!
+        x_val <- qnorm(input$normal_p, mean = input$normal_mean, sd = input$normal_sd)
+        paste0("The x-value for a cumulative probability of ", input$normal_p, " is ", round(x_val, 4))
+      }
+    )
+    
+    output$normal_result <- renderText(result_text)
+    
+  
+    # Update the plot to also handle the 'inverse' case
     output$normal_plot <- renderPlot({
-      x_vals <- seq(input$normal_mean - 4 * input$normal_sd, input$normal_mean + 4 * input$normal_sd, length.out = 500)
-      y_vals <- dnorm(x_vals, mean = input$normal_mean, sd = input$normal_sd)
+      # (Plotting logic remains the same, but now it needs to draw a line for the inverse case)
+      mean_val <- input$normal_mean
+      sd_val <- input$normal_sd
+      x_vals <- seq(mean_val - 4 * sd_val, mean_val + 4 * sd_val, length.out = 500)
+      y_vals <- dnorm(x_vals, mean = mean_val, sd = sd_val)
       df <- data.frame(x = x_vals, y = y_vals)
+      
       gg <- ggplot(df, aes(x = x, y = y)) +
         geom_line(color = "steelblue", size = 1) +
         labs(
-          title = paste("Normal Distribution (\u03bc =", input$normal_mean, ", \u03c3 =", input$normal_sd, ")"),
+          title = paste("Normal Distribution (\u03bc =", mean_val, ", \u03c3 =", sd_val, ")"),
           x = "X",
           y = "Density"
         )
+      
       if (prob_type == "less") {
+        req(input$normal_x)
         gg <- gg + geom_area(data = subset(df, x <= input$normal_x), aes(y = y), fill = "lightblue", alpha = 0.5)
-      }
-      else if (prob_type == "greater") {
+      } else if (prob_type == "greater") {
+        req(input$normal_x)
         gg <- gg + geom_area(data = subset(df, x >= input$normal_x), aes(y = y), fill = "lightblue", alpha = 0.5)
-      }
-      else if (prob_type == "between") {
+      } else if (prob_type == "between") {
+        req(input$normal_a, input$normal_b)
         gg <- gg + geom_area(data = subset(df, x >= input$normal_a & x <= input$normal_b), aes(y = y), fill = "lightblue", alpha = 0.5)
+      } else if (prob_type == "inverse") {
+        req(input$normal_p)
+        x_val <- qnorm(input$normal_p, mean = mean_val, sd = sd_val)
+        gg <- gg + geom_vline(xintercept = x_val, color = "red", linetype = "dashed", size = 1) +
+          geom_area(data = subset(df, x <= x_val), aes(y = y), fill = "lightblue", alpha = 0.5)
       }
+      
       gg
     })
   })
-  
+    
+    
   observeEvent(input$calc_binom_prob, {
     req(input$binom_size, input$binom_prob, input$binom_k)
     if (input$binom_size < 1 || input$binom_prob < 0 || input$binom_prob > 1 || input$binom_k < 0) {
