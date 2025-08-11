@@ -4,12 +4,8 @@
 light_theme <- bs_theme(version = 5)
 dark_theme <- bs_theme(version = 5, bootswatch = "darkly")
 
-# The only change is adding `lib = bootstrap()` to the page_sidebar
 ui <- page_sidebar(
   title = "OpenStat Web App",
-  
-  # --- ADD THIS LINE TO LOAD BOOTSTRAP ICONS ---
-  # --- END OF CHANGE ---
   
   sidebar = sidebar(
     materialSwitch(inputId = "dark_mode_switch", label = "Dark Mode", status = "primary"),
@@ -24,7 +20,6 @@ ui <- page_sidebar(
     )
   ),
   
-  # --- UI for Data Input Tab ---
   conditionalPanel("input.main_nav == 'Data Input'",
                    h2("Data Input and Editor"),
                    layout_columns(
@@ -51,7 +46,6 @@ ui <- page_sidebar(
                    )
   ),
   
-  # --- UI for Descriptive Statistics Tab ---
   conditionalPanel("input.main_nav == 'Descriptive Statistics'",
                    h2("Descriptive Statistics"),
                    layout_columns(
@@ -110,15 +104,11 @@ ui <- page_sidebar(
                    )
   ),
   
-  # --- UI for Inferential Statistics Tab ---
   conditionalPanel("input.main_nav == 'Inferential Statistics'",
                    h2("Inferential Statistics"),
-                   
-                   # This single variable holds the entire UI from our helper file
                    inferential_tab_ui 
   ),
   
-  # --- UI for Regression & Correlation Tab ---
   conditionalPanel("input.main_nav == 'Regression & Correlation'",
                    h2("Regression and Correlation"),
                    layout_columns(
@@ -139,12 +129,10 @@ ui <- page_sidebar(
                    )
   ),
   
-  # --- UI for Probability Tab ---
   conditionalPanel("input.main_nav == 'Probability'",
                    h2("Probability Distributions and Calculations"),
                    navset_card_tab(
                      nav_panel("Basic Event Probability",
-                               # ... (this part is unchanged) ...
                                layout_columns(
                                  col_widths = c(6, 6),
                                  card(
@@ -170,22 +158,25 @@ ui <- page_sidebar(
                      nav_panel("Normal Distribution",
                                layout_sidebar(
                                  sidebar = sidebar(
+                                   h4("Distribution Parameters"),
                                    numericInput("normal_mean", "Mean (\u03bc):", value = 0),
                                    numericInput("normal_sd", "Standard Deviation (\u03c3):", value = 1, min = 0.01),
-                                   
-                                   # --- ADD THE NEW OPTION HERE ---
+                                   hr(),
+                                   h4("Find Probability from x"),
                                    selectInput(
                                      "normal_prob_type", "Select Calculation Type:",
-                                     choices = c(
-                                       "Find Probability from x (P(X < x))" = "less",
-                                       "Find Probability from x (P(X > x))" = "greater",
-                                       "Find Probability from range (P(a < X < b))" = "between",
-                                       "Find x from Probability (Solve for x)" = "inverse" # <-- NEW
-                                     )
+                                     choices = c("P(X < x)" = "less", "P(X > x)" = "greater", "P(a < X < b)" = "between")
                                    ),
+                                   uiOutput("normal_inputs"),
+                                   actionButton("calc_normal", "Calculate Probability"),
                                    
-                                   uiOutput("normal_inputs"), # This placeholder is now essential
-                                   actionButton("calc_normal", "Calculate")
+                                   # --- THIS IS THE NEW SECTION ---
+                                   hr(),
+                                   h4("Find x for a given Cumulative Probability P(X \u2264 x)"),
+                                   numericInput("normal_p_for_x", "Cumulative Probability:", value = 0.95, min = 0, max = 1, step = 0.01),
+                                   actionButton("solve_normal_x", "Solve for x"),
+                                   verbatimTextOutput("solve_normal_x_output")
+                                   # --- END OF NEW SECTION ---
                                  ),
                                  textOutput("normal_result"),
                                  plotOutput("normal_plot")
@@ -198,23 +189,17 @@ ui <- page_sidebar(
                                    card_header("Binomial Distribution Parameters"),
                                    numericInput("binom_size", "Number of Trials (n)", value = 10, min = 1, step = 1),
                                    numericInput("binom_prob", "Probability of Success (p)", value = 0.5, min = 0, max = 1, step = 0.01),
-                                   
                                    hr(),
-                                   
-                                   h4("Calculate P(X) given x"), # Changed to 'x'
-                                   numericInput("binom_k", "Number of Successes (x)", value = 5, min = 0, step = 1), # Changed label to 'x'
-                                   selectInput("binom_type", "Probability Type", choices = c("P(X = x)", "P(X <= x)", "P(X >= x)")), # Changed to 'x'
+                                   h4("Calculate P(X) given x"),
+                                   numericInput("binom_k", "Number of Successes (x)", value = 5, min = 0, step = 1),
+                                   selectInput("binom_type", "Probability Type", choices = c("P(X = x)", "P(X <= x)", "P(X >= x)")),
                                    actionButton("calc_binom_prob", "Calculate Probability"),
                                    verbatimTextOutput("binom_prob_output"),
-                                   
                                    hr(),
-                                   
-                                   # --- THIS IS THE MISSING SECTION, NOW WITH 'x' ---
                                    h4("Find x for a given Cumulative Probability P(X \u2264 x)"),
                                    numericInput("binom_p_for_k", "Cumulative Probability (e.g., 0.95):", value = 0.95, min = 0, max = 1, step = 0.01),
-                                   actionButton("solve_binom_k", "Solve for x"), # Changed button label
+                                   actionButton("solve_binom_k", "Solve for x"),
                                    verbatimTextOutput("solve_binom_k_output")
-                                   # --- END OF SECTION ---
                                  ),
                                  card(
                                    card_header("Binomial Distribution PMF Plot"),
@@ -223,7 +208,6 @@ ui <- page_sidebar(
                                )
                      ),
                      nav_panel("Poisson Distribution",
-                               # ... (this part is unchanged) ...
                                layout_columns(
                                  col_widths = c(4, 8),
                                  card(
