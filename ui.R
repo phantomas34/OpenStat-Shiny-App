@@ -156,30 +156,43 @@ ui <- page_sidebar(
                                )
                      ),
                      nav_panel("Normal Distribution",
-                               layout_sidebar(
-                                 sidebar = sidebar(
-                                   h4("Distribution Parameters"),
+                               layout_columns(
+                                 col_widths = c(4, 8), # Split the page 1/3 and 2/3
+                                 
+                                 # --- Column 1: All Inputs ---
+                                 card(
+                                   card_header("Distribution Parameters"),
                                    numericInput("normal_mean", "Mean (\u03bc):", value = 0),
                                    numericInput("normal_sd", "Standard Deviation (\u03c3):", value = 1, min = 0.01),
-                                   hr(),
-                                   h4("Find Probability from x"),
+                                   
+                                   hr(), # --- Separator ---
+                                   
+                                   # Single dropdown to control the entire panel
                                    selectInput(
                                      "normal_prob_type", "Select Calculation Type:",
-                                     choices = c("P(X < x)" = "less", "P(X > x)" = "greater", "P(a < X < b)" = "between")
+                                     choices = c(
+                                       "Find Probability from x (P(X < x))" = "less",
+                                       "Find Probability from x (P(X > x))" = "greater",
+                                       "Find Probability from range (P(a < X < b))" = "between",
+                                       "Find x from Probability (Solve for x)" = "inverse"
+                                     )
                                    ),
+                                   # Placeholder for the dynamic input box
                                    uiOutput("normal_inputs"),
-                                   actionButton("calc_normal", "Calculate Probability"),
                                    
-                                   # --- THIS IS THE NEW SECTION ---
-                                   hr(),
-                                   h4("Find x for a given Cumulative Probability P(X \u2264 x)"),
-                                   numericInput("normal_p_for_x", "Cumulative Probability:", value = 0.95, min = 0, max = 1, step = 0.01),
-                                   actionButton("solve_normal_x", "Solve for x"),
-                                   verbatimTextOutput("solve_normal_x_output")
-                                   # --- END OF NEW SECTION ---
+                                   # Single button for all actions
+                                   actionButton("calc_normal", "Calculate")
                                  ),
-                                 textOutput("normal_result"),
-                                 plotOutput("normal_plot")
+                                 
+                                 # --- Column 2: All Outputs ---
+                                 card(
+                                   card_header("Results"),
+                                   h4("Calculated Value:"),
+                                   verbatimTextOutput("normal_result"),
+                                   hr(),
+                                   h4("Visual Representation:"),
+                                   plotOutput("normal_plot")
+                                 )
                                )
                      ),
                      nav_panel("Binomial Distribution",
