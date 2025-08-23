@@ -223,50 +223,94 @@ server <- function(input, output, session) {
     }
   })
   
-  # --- UI Dropdown Generation ---
-  
+  # --- UI Dropdown Generation (for non-inferential tabs) ---
   observe({
     df <- data_r()
     if (!is.null(df)) {
       numeric_cols <- names(df)[sapply(df, is.numeric)]
-      char_factor_cols <- names(df)[sapply(df, function(x) is.character(x) || is.factor(x))]
       all_cols <- names(df)
+      
+      # Descriptive
       output$select_descriptive_variable <- renderUI({ selectInput("descriptive_variable", "Select Variable for Descriptive Stats", choices = c("", all_cols)) })
       output$select_group_by_variable <- renderUI({ selectInput("group_by_variable", "Group By (Optional)", choices = c("None", all_cols)) })
       output$select_scatter_x <- renderUI({ selectInput("scatter_x", "Select X-axis Variable (Numeric)", choices = c("", numeric_cols)) })
       output$select_scatter_y <- renderUI({ selectInput("scatter_y", "Select Y-axis Variable (Numeric)", choices = c("", numeric_cols)) })
       output$select_dot_plot_variable <- renderUI({ selectInput("dot_plot_variable", "Select Variable for Dot Plot", choices = c("", numeric_cols)) })
-      output$select_anova_dv <- renderUI({ selectInput("anova_dv", "Dependent Variable (Numeric)", choices = c("", numeric_cols)) })
-      output$select_anova_iv <- renderUI({ selectInput("anova_iv", "Independent Variable (Categorical)", choices = c("", char_factor_cols)) })
-      output$select_prop_var <- renderUI({ selectInput("prop_var", "Proportion Variable (Binary/Categorical)", choices = c("", char_factor_cols)) })
-      output$select_group_var_prop <- renderUI({ selectInput("group_var_prop", "Grouping Variable (for Two-Prop Test)", choices = c("", char_factor_cols)) })
-      output$select_ht_variable <- renderUI({ selectInput("ht_variable", "Select Variable for t-test (Numeric)", choices = c("", numeric_cols)) })
-      output$select_ht_group_variable <- renderUI({ choices <- c("None", char_factor_cols); selectInput("ht_group_variable", "Grouping Variable (for Two-Sample Test)", choices = choices) })
-      output$select_chi_x <- renderUI({ selectInput("chi_x", "Row Variable (Categorical)", choices = c("", char_factor_cols)) })
-      output$select_chi_y <- renderUI({ selectInput("chi_y", "Column Variable (Categorical)", choices = c("", char_factor_cols)) })
-      output$select_normality_var <- renderUI({ selectInput("normality_var", "Select Variable for Normality Check (Numeric)", choices = c("", numeric_cols)) })
+      
+      # Regression & Correlation
       output$select_regression_dv <- renderUI({ selectInput("regression_dv", "Dependent Variable (Numeric)", choices = c("", numeric_cols)) })
       output$select_regression_iv <- renderUI({ selectInput("regression_iv", "Independent Variable(s) (Numeric)", choices = numeric_cols, multiple = TRUE) })
       output$select_correlation_vars <- renderUI({ selectInput("correlation_vars", "Select Variables for Correlation (Numeric)", choices = numeric_cols, multiple = TRUE) })
     } else {
-      output$select_descriptive_variable <- renderUI({ selectInput("descriptive_variable", "Select Variable for Descriptive Stats", choices = "") })
+      # Clear UI when no data is loaded
+      output$select_descriptive_variable <- renderUI({ selectInput("descriptive_variable", "Select Variable", choices = "") })
       output$select_group_by_variable <- renderUI({ selectInput("group_by_variable", "Group By (Optional)", choices = "") })
-      output$select_scatter_x <- renderUI({ selectInput("scatter_x", "Select X-axis Variable (Numeric)", choices = "") })
-      output$select_scatter_y <- renderUI({ selectInput("scatter_y", "Select Y-axis Variable (Numeric)", choices = "") })
-      output$select_dot_plot_variable <- renderUI({ selectInput("dot_plot_variable", "Select Variable for Dot Plot", choices = "") })
-      output$select_anova_dv <- renderUI({ selectInput("anova_dv", "Dependent Variable (Numeric)", choices = "") })
-      output$select_anova_iv <- renderUI({ selectInput("anova_iv", "Independent Variable (Categorical)", choices = "") })
-      output$select_prop_var <- renderUI({ selectInput("prop_var", "Proportion Variable (Binary/Categorical)", choices = "") })
-      output$select_group_var_prop <- renderUI({ selectInput("group_var_prop", "Grouping Variable (for Two-Prop Test)", choices = "") })
-      output$select_ht_variable <- renderUI({ selectInput("ht_variable", "Select Variable for t-test (Numeric)", choices = "") })
-      output$select_chi_x <- renderUI({ selectInput("chi_x", "Row Variable (Categorical)", choices = "") })
-      output$select_chi_y <- renderUI({ selectInput("chi_y", "Column Variable (Categorical)", choices = "") })
-      output$select_normality_var <- renderUI({ selectInput("normality_var", "Select Variable for Normality Check (Numeric)", choices = "") })
-      output$select_regression_dv <- renderUI({ selectInput("regression_dv", "Dependent Variable (Numeric)", choices = "") })
-      output$select_regression_iv <- renderUI({ selectInput("regression_iv", "Independent Variable(s) (Numeric)", choices = "") })
-      output$select_correlation_vars <- renderUI({ selectInput("correlation_vars", "Select Variables for Correlation (Numeric)", choices = "") })
+      output$select_scatter_x <- renderUI({ selectInput("scatter_x", "Select X-axis Variable", choices = "") })
+      output$select_scatter_y <- renderUI({ selectInput("scatter_y", "Select Y-axis Variable", choices = "") })
+      output$select_dot_plot_variable <- renderUI({ selectInput("dot_plot_variable", "Select Variable", choices = "") })
+      output$select_regression_dv <- renderUI({ selectInput("regression_dv", "Dependent Variable", choices = "") })
+      output$select_regression_iv <- renderUI({ selectInput("regression_iv", "Independent Variable(s)", choices = "") })
+      output$select_correlation_vars <- renderUI({ selectInput("correlation_vars", "Select Variables", choices = "") })
     }
   })
+  
+  # --- INFERENTIAL UI DROPDOWN GENERATION ---
+  observe({
+    df <- data_r()
+    numeric_cols <- if (is.null(df)) "" else names(df)[sapply(df, is.numeric)]
+    char_factor_cols <- if (is.null(df)) "" else names(df)[sapply(df, function(x) is.character(x) || is.factor(x))]
+    
+    # Mean Tests Panel
+    output$select_ht_variable <- renderUI({ selectInput("ht_variable", "Select Variable for t-test (Numeric)", choices = c("", numeric_cols)) })
+    output$select_ht_group_variable <- renderUI({ selectInput("ht_group_variable", "Grouping Variable (for Two-Sample Test)", choices = c("None", char_factor_cols)) })
+    output$paired_var1_ui <- renderUI({ selectInput("paired_var1", "Select First Variable (Numeric):", choices = c("", numeric_cols)) })
+    output$paired_var2_ui <- renderUI({ selectInput("paired_var2", "Select Second Variable (Numeric):", choices = c("", numeric_cols)) })
+    output$select_anova_dv <- renderUI({ selectInput("anova_dv", "Dependent Variable (Numeric)", choices = c("", numeric_cols)) })
+    output$select_anova_iv <- renderUI({ selectInput("anova_iv", "Independent Variable (Categorical)", choices = c("", char_factor_cols)) })
+    
+    # Categorical & Normality Panels
+    output$select_chi_x <- renderUI({ selectInput("chi_x", "Row Variable (Categorical)", choices = c("", char_factor_cols)) })
+    output$select_chi_y <- renderUI({ selectInput("chi_y", "Column Variable (Categorical)", choices = c("", char_factor_cols)) })
+    output$select_normality_var <- renderUI({ selectInput("normality_var", "Select Variable for Normality Check (Numeric)", choices = c("", numeric_cols)) })
+    
+    # Proportion Test Panel
+    output$prop_variable_ui <- renderUI({ selectInput("prop_variable", "Select a categorical variable:", choices = c("", char_factor_cols)) })
+    output$two_prop_var_ui <- renderUI({ selectInput("prop_var", "Select Proportion Variable:", choices = c("", char_factor_cols)) })
+    output$two_prop_group_var_ui <- renderUI({ selectInput("two_prop_group_var", "Select Grouping Variable:", choices = c("", char_factor_cols)) })
+  })
+  
+  # Observer for One-Proportion Test's 'Success Value' dropdown
+  observe({
+    df <- data_r()
+    req(df, input$prop_variable)
+    vals <- unique(na.omit(df[[input$prop_variable]]))
+    output$success_value_ui <- renderUI({
+      selectInput("success_value", "Success Value:", choices = vals, selected = vals[1])
+    })
+  })
+  
+  # Observer for Two-Proportion Test's dependent dropdowns
+  observe({
+    df <- data_r()
+    req(df, input$prop_var, input$two_prop_group_var)
+    
+    success_vals <- unique(na.omit(df[[input$prop_var]]))
+    output$two_prop_success_ui <- renderUI({
+      selectInput("two_prop_success", "Select Success Value:", choices = success_vals, selected = success_vals[1])
+    })
+    
+    group_vals <- unique(na.omit(df[[input$two_prop_group_var]]))
+    output$two_prop_group1_ui <- renderUI({
+      selectInput("two_prop_group1", "Value for Group 1:", choices = group_vals, selected = group_vals[1])
+    })
+    
+    output$two_prop_group2_ui <- renderUI({
+      req(input$two_prop_group1) 
+      remaining_vals <- setdiff(group_vals, input$two_prop_group1)
+      selectInput("two_prop_group2", "Value for Group 2:", choices = remaining_vals, selected = if(length(remaining_vals)>0) remaining_vals[1] else NULL)
+    })
+  })
+  
   
   # --- Descriptive Statistics Logic ---
   
@@ -480,28 +524,75 @@ server <- function(input, output, session) {
     var <- input$dot_plot_variable
     validate(need(is.numeric(df[[var]]), "Dot plot requires a numeric variable."))
     
-    integer_breaks <- function(x) {
-      seq(floor(min(x, na.rm = TRUE)), ceiling(max(x, na.rm = TRUE)), by = 1)
+    # --- START OF DEFINITIVE FIX ---
+    
+    data_vec <- na.omit(df[[var]])
+    
+    if (length(data_vec) < 2) {
+      showNotification("Not enough data to generate a dot plot.", type = "warning")
+      current_dot_plot(NULL) 
+      return()
     }
     
-    p <- ggplot(df, aes(x = .data[[var]])) +
+    data_range <- max(data_vec) - min(data_vec)
+    dynamic_binwidth <- if (data_range == 0) 1 else data_range / 30
+    
+    # Create the base plot object
+    p_base <- ggplot(df, aes(x = .data[[var]])) +
       geom_dotplot(
         binaxis = 'x',
         stackdir = 'up',
         dotsize = 0.8,
         fill = "steelblue",
-        binwidth = 1
-      ) +
-      scale_y_continuous(breaks = integer_breaks) +
-      scale_x_continuous(breaks = integer_breaks) +
-      labs(
-        title = "Dot Plot",
-        x = "Data Values",
-        y = "Frequency"
+        binwidth = dynamic_binwidth
       )
     
-    current_dot_plot(p) 
+    # Build the plot to find the max frequency for the y-axis
+    built_p <- ggplot_build(p_base)
+    max_freq <- max(built_p$data[[1]]$count)
+    
+    y_breaks <- if (max_freq > 1) {
+      seq(from = 1, to = floor(max_freq), by = 1)
+    } else {
+      1
+    }
+    
+    # Add the final layers for scales, labels, and an EXPLICIT theme override
+    p_final <- p_base + 
+      scale_y_continuous(
+        breaks = y_breaks,
+        limits = c(0, NA),
+        expand = expansion(mult = c(0.02, 0.05))
+      ) +
+      scale_x_continuous(
+        breaks = scales::pretty_breaks(n = 7)
+      ) +
+      labs(
+        title = paste("Dot Plot of", var),
+        x = var,
+        y = "Frequency"
+      ) +
+      theme_light() + 
+      
+      # THIS IS THE CRUCIAL OVERRIDE
+      # We are explicitly forcing the axis text to be drawn with a visible color and size.
+      # This will override any settings from thematic_shiny().
+      theme(
+        axis.text.x = element_text(color = "gray30", size = 10, angle = 0), # Use a dark gray, size 10, no angle
+        axis.text.y = element_text(color = "gray30", size = 10), # Also force the y-axis text
+        
+        # Also ensure axis titles are visible
+        axis.title = element_text(color = "gray30", size = 11),
+        
+        panel.grid.minor = element_blank()
+      )
+    
+    # --- END OF DEFINITIVE FIX ---
+    
+    
+    current_dot_plot(p_final) 
   })
+  
   
   output$dot_plot <- renderPlot({
     req(current_dot_plot())
@@ -558,30 +649,57 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$run_prop_test, {
-    df <- data_r()
-    req(df, input$prop_variable, input$success_value, input$prop_null)
+    # This logic now handles both manual and data-driven modes
     
-    var <- input$prop_variable
-    success_val <- input$success_value
-    
-    successes <- sum(df[[var]] == success_val, na.rm = TRUE)
-    total <- sum(!is.na(df[[var]]))
-    
-    if (total == 0) {
+    if (isTRUE(input$prop_test_manual_mode)) {
+      # --- MANUAL MODE ---
+      req(input$prop_manual_successes, input$prop_manual_trials, input$prop_null)
+      
+      successes <- input$prop_manual_successes
+      total <- input$prop_manual_trials
+      
+      # Add validation for manual inputs
+      if (successes > total) {
+        showNotification("Error: Number of successes cannot be greater than the number of trials.", type = "error")
+        return()
+      }
+      
+      test <- prop.test(x = successes, n = total, p = input$prop_null, alternative = input$prop_alternative)
+      
       output$prop_test_result <- renderPrint({
-        cat("Error: No valid data for this variable.")
+        cat("One-Proportion Test (Manual Input)\n\n")
+        cat("Successes (x):", successes, "\n")
+        cat("Trials (n):", total, "\n\n")
+        print(test)
       })
-      return()
+      
+    } else {
+      # --- DATA-DRIVEN MODE (Original Logic) ---
+      df <- data_r()
+      req(df, input$prop_variable, input$success_value, input$prop_null)
+      
+      var <- input$prop_variable
+      success_val <- input$success_value
+      
+      successes <- sum(df[[var]] == success_val, na.rm = TRUE)
+      total <- sum(!is.na(df[[var]]))
+      
+      if (total == 0) {
+        output$prop_test_result <- renderPrint({
+          cat("Error: No valid data for this variable.")
+        })
+        return()
+      }
+      
+      test <- prop.test(x = successes, n = total, p = input$prop_null, alternative = input$prop_alternative)
+      
+      output$prop_test_result <- renderPrint({
+        cat("One-Proportion Test (from Dataset)\n")
+        cat("Variable:", var, "\n")
+        cat("Success Value:", success_val, "\n")
+        print(test)
+      })
     }
-    
-    test <- prop.test(x = successes, n = total, p = input$prop_null, alternative = input$prop_alternative)
-    
-    output$prop_test_result <- renderPrint({
-      cat("One-Proportion Test\n")
-      cat("Variable:", var, "\n")
-      cat("Success Value:", success_val, "\n")
-      print(test)
-    })
   })
   
   observeEvent(input$run_two_prop_test, {
@@ -931,20 +1049,15 @@ server <- function(input, output, session) {
     })
   })
   
-  # This dynamic UI ONLY handles the inputs for the FIRST button
-  # This renderUI dynamically shows an input for 'x' or 'p'
   output$normal_inputs <- renderUI({
     req(input$normal_prob_type)
     prob_type <- input$normal_prob_type
     
     if (prob_type == "inverse") {
-      # If user wants to solve for x, show a probability input
       numericInput("normal_p", "Cumulative Probability P(X < x):", value = 0.95, min = 0, max = 1, step = 0.01)
     } else if (prob_type %in% c("less", "greater")) {
-      # If user wants to find probability, show an x-value input
       numericInput("normal_x", "X Value:", value = 1.96)
     } else if (prob_type == "between") {
-      # For a range, show two x-value inputs
       tagList(
         numericInput("normal_a", "Lower Bound (a):", value = -1.96),
         numericInput("normal_b", "Upper Bound (b):", value = 1.96)
@@ -952,7 +1065,6 @@ server <- function(input, output, session) {
     }
   })
   
-  # This single observeEvent now correctly handles all four calculation types AND the plot
   observeEvent(input$calc_normal, {
     req(input$normal_mean, input$normal_sd, input$normal_prob_type)
     
@@ -964,7 +1076,6 @@ server <- function(input, output, session) {
     
     prob_type <- input$normal_prob_type
     
-    # Perform calculation and store the result
     result_text <- switch(
       prob_type,
       "less" = {
@@ -990,10 +1101,8 @@ server <- function(input, output, session) {
       }
     )
     
-    # Render the text output
     output$normal_result <- renderPrint({ result_text })
     
-    # Render the plot output in the same observer
     output$normal_plot <- renderPlot({
       mean_val <- input$normal_mean
       sd_val <- input$normal_sd
@@ -1007,7 +1116,6 @@ server <- function(input, output, session) {
           x = "X", y = "Density"
         )
       
-      # Correctly shade or add lines based on the selected calculation type
       if (prob_type == "less") {
         req(input$normal_x)
         gg <- gg + geom_area(data = subset(df, x <= input$normal_x), aes(y = y), fill = "lightblue", alpha = 0.5)
@@ -1027,7 +1135,30 @@ server <- function(input, output, session) {
       gg
     })
   })
-
+  
+  ## --- ADDED FOR BINOMIAL SUMMARY --- ##
+  output$binom_summary_stats <- renderPrint({
+    req(input$binom_size, input$binom_prob)
+    n <- input$binom_size
+    p <- input$binom_prob
+    
+    # Validate inputs
+    if (n < 1 || p < 0 || p > 1) {
+      cat("Invalid parameters: n must be >= 1 and p must be between 0 and 1.")
+      return()
+    }
+    
+    expected_value <- n * p
+    variance <- n * p * (1 - p)
+    std_dev <- sqrt(variance)
+    
+    cat(
+      "Expected Value (E[X] = np): ", round(expected_value, 4), "\n",
+      "Variance (\u03c3\u00b2 = np(1-p)): ", round(variance, 4), "\n",
+      "Standard Deviation (\u03c3): ", round(std_dev, 4), sep = ""
+    )
+  })
+  ## --- END ADDED --- ##
   
   observeEvent(input$calc_binom_prob, {
     req(input$binom_size, input$binom_prob, input$binom_k)
@@ -1081,6 +1212,28 @@ server <- function(input, output, session) {
            x = "Number of Successes (x)", y = "Probability") +
       scale_x_continuous(breaks = x_vals)
   })
+  ## --- ADDED FOR POISSON SUMMARY --- ##
+  output$pois_summary_stats <- renderPrint({
+    req(input$pois_lambda)
+    lambda <- input$pois_lambda
+    
+    # Validate input
+    if (lambda <= 0) {
+      cat("Invalid parameter: Lambda (\u03bb) must be positive.")
+      return()
+    }
+    
+    expected_value <- lambda
+    variance <- lambda
+    std_dev <- sqrt(variance)
+    
+    cat(
+      "Expected Value (E[X] = \u03bb): ", round(expected_value, 4), "\n",
+      "Variance (\u03c3\u00b2 = \u03bb): ", round(variance, 4), "\n",
+      "Standard Deviation (\u03c3): ", round(std_dev, 4), sep = ""
+    )
+  })
+  ## --- END ADDED --- ##
   
   observeEvent(input$calc_pois_prob, {
     req(input$pois_lambda, input$pois_k)

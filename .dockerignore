@@ -1,0 +1,13 @@
+# Git files
+.git/
+.gitignore
+
+# RStudio project file
+Openstats.Rproj
+
+# rsconnect deployment folder (very important to ignore!)
+rsconnect/
+
+# Any local user data or R history
+.Rhistory
+.RData
