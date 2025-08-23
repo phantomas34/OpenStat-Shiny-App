@@ -202,6 +202,13 @@ ui <- page_sidebar(
                                    card_header("Binomial Distribution Parameters"),
                                    numericInput("binom_size", "Number of Trials (n)", value = 10, min = 1, step = 1),
                                    numericInput("binom_prob", "Probability of Success (p)", value = 0.5, min = 0, max = 1, step = 0.01),
+                                   
+                                   ## --- ADDED --- ##
+                                   hr(),
+                                   h4("Distribution Summary"),
+                                   verbatimTextOutput("binom_summary_stats"),
+                                   ## --- END ADDED --- ##
+                                   
                                    hr(),
                                    h4("Calculate P(X) given x"),
                                    numericInput("binom_k", "Number of Successes (x)", value = 5, min = 0, step = 1),
@@ -226,6 +233,13 @@ ui <- page_sidebar(
                                  card(
                                    card_header("Poisson Distribution Parameters"),
                                    numericInput("pois_lambda", "Lambda (\u03bb - average rate)", value = 3, min = 0.01),
+                                   
+                                   ## --- ADDED --- ##
+                                   hr(),
+                                   h4("Distribution Summary"),
+                                   verbatimTextOutput("pois_summary_stats"),
+                                   ## --- END ADDED --- ##
+                                   
                                    hr(),
                                    h4("Calculate P(X = k) or P(X <= k)"),
                                    numericInput("pois_k", "Number of Events (k)", value = 2, min = 0, step = 1),
